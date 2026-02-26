@@ -1,0 +1,20 @@
+initialized_at: null
+llm:
+  model_id: gpt-4o
+  provider: azure_openai
+paths:
+  data: /Users/pana982/openhands_workspace/deepsolve-test/data
+  findings: /Users/pana982/openhands_workspace/deepsolve-test/findings
+  related_work: /Users/pana982/openhands_workspace/deepsolve-test/related_work
+  research: /Users/pana982/openhands_workspace/deepsolve-test/research
+project:
+  research_question: null
+  root: /Users/pana982/openhands_workspace/deepsolve-test
+  slug: null
+repo:
+  full: gihanpanapitiya/deepsolve-test
+  issue_url: null
+  name: deepsolve-test
+  owner: gihanpanapitiya
+settings:
+  ambiguity_threshold: 0.8
