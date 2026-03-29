@@ -54,17 +54,42 @@ Based on comprehensive research, current state-of-the-art approaches include:
 - Synthetic accessibility scoring recommended
 - Consider drug-likeness filters (e.g., Lipinski's rules)
 
-## Questions for User (Goal Refinement)
-Waiting for clarification on:
-1. Application context (drug discovery, materials, etc.)
-2. Additional molecular constraints beyond solubility
-3. Scale (number of molecules to generate)
-4. Reference datasets availability
-5. Computational resources available
-6. Preference for generative approach
+## User Requirements (Confirmed)
+1. **Application**: Cancer drug discovery
+2. **Primary constraint**: Solubility > 1 logS
+3. **Molecular weight**: < 300 Da (more restrictive than typical 300-600 Da)
+4. **Scale**: Generate as many valid candidates as possible
+5. **Dataset**: ZINC15 (10M drug-like molecules)
+6. **Timeline**: Rapid prototyping
+7. **Resources**: GPU available
+
+## Cancer Drug Design Constraints (Literature-based)
+Typical properties for oncology small molecules:
+- **LogP**: 1.5-4.0 (optimal ~3.0 for membrane permeation)
+- **Hydrogen bond donors (HBD)**: ≤5
+- **Hydrogen bond acceptors (HBA)**: ≤10
+- **Polar surface area (PSA)**: <140 Ų (preferably <120 Ų for oral absorption)
+- **Rotatable bonds**: ≤10 (for binding entropy and metabolic stability)
+- **Aromatic rings**: 2-4 (for kinase binding)
+- **Synthetic accessibility**: SA score <3.0 (easily synthesizable)
+- **Caco-2 permeability**: Papp >10 × 10⁻⁶ cm/s
+- **Metabolic clearance**: HLM <20 µL/min/mg
+- **Oral bioavailability**: Target >30% (though 10-20% acceptable for potent drugs)
+
+### Key Considerations
+- MW <300 Da is quite restrictive (typical range 300-600 Da) but achievable
+- Higher solubility (>1 logS) is beneficial for cancer drugs
+- Need to balance lipophilicity for cell permeability vs. solubility
+- Synthetic accessibility critical for rapid lead development
+
+## Implementation Strategy
+**Chosen approach**: LSTM-based SMILES generator with Reinforcement Learning
+- **Rationale**: Best balance for rapid prototyping (faster than Transformers/Diffusion, better than pure RNN)
+- **Optimization**: Multi-objective reward function with property constraints
+- **Expected output**: 10k-100k candidate molecules with >85% validity
 
 ## Next Steps
-- Finalize goal based on user responses
-- Create detailed research plan (PLAN.md)
-- Set up development environment
-- Implement chosen architecture and optimization strategy
+✅ Goal refined and confirmed
+✅ Literature review completed
+✅ Research plan created (PLAN.md)
+⏳ Starting Phase 1: Environment setup and data preparation
