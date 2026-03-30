@@ -83,13 +83,21 @@ Typical properties for oncology small molecules:
 - Synthetic accessibility critical for rapid lead development
 
 ## Implementation Strategy
-**Chosen approach**: LSTM-based SMILES generator with Reinforcement Learning
-- **Rationale**: Best balance for rapid prototyping (faster than Transformers/Diffusion, better than pure RNN)
+**Chosen approach**: Transformer-based SMILES generator with Reinforcement Learning
+- **Rationale**: Collaborator decision (Option B) - best balance of performance and computational cost
+- **Expected performance**: 90-94% validity, 100 SMILES/s, moderate GPU requirements
+- **Advantages over LSTM**: Higher validity, better quality, more robust to complex molecules
 - **Optimization**: Multi-objective reward function with property constraints
-- **Expected output**: 10k-100k candidate molecules with >85% validity
+- **Expected output**: 10k-100k candidate molecules with >90% validity
 
-## Next Steps
+## Current Status
 ✅ Goal refined and confirmed
 ✅ Literature review completed
 ✅ Research plan created (PLAN.md)
-⏳ Starting Phase 1: Environment setup and data preparation
+✅ **Phase 1 COMPLETED**:
+  - Environment setup (PyTorch 2.8.0, RDKit 2023.9.1)
+  - Property calculator with 9/9 tests passing
+  - Prototype dataset (53 unique molecules)
+  - Data preparation notebook with visualizations
+⏳ **Phase 2 IN PROGRESS**: Solubility prediction model
+🔜 Next: Implement/acquire solubility predictor (critical for logS > 1 constraint)

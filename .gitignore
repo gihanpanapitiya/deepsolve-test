@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Data (optionally ignore large datasets)
+# data/*.csv
+# data/*.smi
+# Uncomment above to ignore large data files
+
+# Models (optionally ignore trained models)
+models/*.pt
+models/*.pth
+models/*.h5
+models/*.ckpt
+
+# Results (optionally keep results in git)
+# results/figures/*.png
+# Uncomment above to ignore result figures
+
+# Logs
+*.log
