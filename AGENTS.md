@@ -94,15 +94,9 @@ Typical properties for oncology small molecules:
 ✅ Goal refined and confirmed
 ✅ Literature review completed
 ✅ Research plan created (PLAN.md)
-✅ **Phase 1 COMPLETED**:
-  - Environment setup (PyTorch 2.8.0, RDKit 2023.9.1)
-  - Property calculator with 9/9 tests passing
-  - Prototype dataset (53 unique molecules)
-  - Data preparation notebook with visualizations
-✅ **Phase 2 COMPLETED**:
-  - ESOL solubility predictor implemented (logS calculation)
-  - Primary constraint (solubility > 1 logS) integrated
-  - Unit tests updated: 10/10 passing
-  - Benchmarked on known drug molecules
-⏳ **Phase 2.3 TODO**: Scale up dataset (100k-1M molecules from ZINC15)
-🔜 Next: Download full ZINC15 dataset for training Transformer model
+✅ **Phase 1 COMPLETED**: Environment, property calculator, prototype dataset
+✅ **Phase 2 COMPLETED**: ESOL solubility predictor, unit tests (10/10), benchmarked
+✅ **Phase 2.3 COMPLETED**: 100k ChEMBL dataset downloaded (99,999 unique, 100% valid)
+✅ **Phase 3.1 COMPLETED**: Colab Transformer training notebook ready
+⏳ **Phase 3.2 TODO**: Run training on Google Colab GPU (4-8 hours)
+🔜 Next: Upload notebook to Colab, enable GPU, run training

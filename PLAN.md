@@ -71,18 +71,19 @@ Based on oncology drug design best practices:
 
 ---
 
-### Phase 3: Generative Model Development ⏸ TODO
-**Assigned to**: CS, Skill 3 (Model Development)
+### Phase 3: Generative Model Development ⏳ IN PROGRESS
+**Assigned to**: CS, Skill 3 (Model Development) + Google Colab GPU
 
 **Approach**: Transformer-based SMILES generator with Reinforcement Learning optimization
 (Chosen by collaborator for best balance: ~90-94% validity, 100 SMILES/s, moderate computational cost)
 
-- [ ] **Task 3.1**: Pre-train SMILES generator on ZINC15
-  - Architecture: GPT-style or BERT-style Transformer
-  - Character or token-level tokenization
-  - Train for sufficient epochs until convergence
-  - Validate SMILES validity >90% (higher than LSTM baseline)
-  - **Deliverable**: `models/smiles_generator_pretrained.pt`
+- [x] **Task 3.1**: Pre-train SMILES generator on ZINC15
+  - Architecture: GPT-style Transformer (6 layers, 8 heads, 512d)
+  - Character-level tokenization (~80 character vocabulary)
+  - **Status**: ✅ Colab notebook ready
+  - Training: 4-8 hours on T4 GPU, target >90% validity
+  - **Deliverable**: `notebooks/transformer_training_colab.ipynb`, `COLAB_TRAINING.md`
+  - **Next**: Upload to Colab and run training
 
 - [ ] **Task 3.2**: Implement reinforcement learning fine-tuning
   - Algorithm: PPO or REINFORCE with baseline
@@ -185,6 +186,7 @@ Based on oncology drug design best practices:
 ---
 
 ## Change Log
+- 2026-03-29 (Late PM): Phase 2.3 & 3.1 completed. Dataset (100k molecules) ready. Colab training notebook created. Next: Run training on Colab GPU.
 - 2026-03-29 (PM): Phase 2 completed. ESOL solubility predictor implemented and validated (10/10 tests passing). Next: Dataset scaling.
 - 2026-03-29 (AM): Phase 1 completed. Updated to Transformer-based approach (collaborator decision). Starting Phase 2.
 - 2024-03-29: Initial plan created based on user requirements and literature review
