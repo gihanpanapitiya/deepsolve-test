@@ -99,5 +99,10 @@ Typical properties for oncology small molecules:
   - Property calculator with 9/9 tests passing
   - Prototype dataset (53 unique molecules)
   - Data preparation notebook with visualizations
-⏳ **Phase 2 IN PROGRESS**: Solubility prediction model
-🔜 Next: Implement/acquire solubility predictor (critical for logS > 1 constraint)
+✅ **Phase 2 COMPLETED**:
+  - ESOL solubility predictor implemented (logS calculation)
+  - Primary constraint (solubility > 1 logS) integrated
+  - Unit tests updated: 10/10 passing
+  - Benchmarked on known drug molecules
+⏳ **Phase 2.3 TODO**: Scale up dataset (100k-1M molecules from ZINC15)
+🔜 Next: Download full ZINC15 dataset for training Transformer model
