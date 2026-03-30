@@ -111,6 +111,42 @@ def calculate_qed(mol: Chem.Mol) -> float:
         return 0.0
 
 
+def calculate_solubility_esol(mol: Chem.Mol) -> float:
+    """
+    Calculate aqueous solubility (logS) using ESOL method.
+    
+    ESOL (Estimated SOLubility) is a widely-used linear regression model:
+    log S = 0.16 - 0.63·cLogP - 0.0062·MW + 0.066·RB - 0.74·AP
+    
+    where:
+    - cLogP = calculated LogP (lipophilicity)
+    - MW = molecular weight (Da)
+    - RB = number of rotatable bonds
+    - AP = number of aromatic rings
+    
+    Returns:
+        logS value (log mol/L)
+        Higher values = more soluble
+        Typical range: -10 to 2
+        
+    Reference:
+        Delaney, J. S. (2004). ESOL: Estimating aqueous solubility directly 
+        from molecular structure. J. Chem. Inf. Comput. Sci., 44(3), 1000-1005.
+    """
+    try:
+        logp = Crippen.MolLogP(mol)
+        mw = Descriptors.MolWt(mol)
+        rb = Lipinski.NumRotatableBonds(mol)
+        ap = Descriptors.NumAromaticRings(mol)
+        
+        # ESOL formula
+        log_s = 0.16 - 0.63 * logp - 0.0062 * mw + 0.066 * rb - 0.74 * ap
+        
+        return log_s
+    except:
+        return None
+
+
 def calculate_all_properties(smiles: str) -> Optional[Dict[str, float]]:
     """
     Calculate all molecular properties for a SMILES string.
@@ -136,6 +172,7 @@ def calculate_all_properties(smiles: str) -> Optional[Dict[str, float]]:
         'rotatable_bonds': calculate_rotatable_bonds(mol),
         'sa_score': calculate_sa_score(mol),
         'qed': calculate_qed(mol),
+        'logS': calculate_solubility_esol(mol),  # Aqueous solubility
     }
     
     return properties
@@ -143,6 +180,7 @@ def calculate_all_properties(smiles: str) -> Optional[Dict[str, float]]:
 
 def check_cancer_drug_constraints(
     smiles: str,
+    logs_min: float = 1.0,  # NEW: Solubility constraint (primary requirement)
     mw_max: float = 300.0,
     logp_min: float = 1.5,
     logp_max: float = 4.0,
@@ -155,6 +193,7 @@ def check_cancer_drug_constraints(
     Check if a molecule meets cancer drug constraints.
     
     Constraints (based on cancer drug fragment specifications):
+    - **logS > 1.0** (PRIMARY CONSTRAINT: high aqueous solubility)
     - MW < 300 Da
     - LogP between 1.5-4.0
     - HBD ≤ 5
@@ -164,6 +203,7 @@ def check_cancer_drug_constraints(
     
     Args:
         smiles: SMILES string
+        logs_min: Minimum solubility (logS, mol/L)
         mw_max: Maximum molecular weight (Da)
         logp_min: Minimum LogP
         logp_max: Maximum LogP
@@ -184,6 +224,7 @@ def check_cancer_drug_constraints(
         return False, {}, {}
     
     constraints = {
+        'solubility_check': properties['logS'] is not None and properties['logS'] > logs_min,
         'mw_check': properties['molecular_weight'] < mw_max,
         'logp_check': logp_min <= properties['logp'] <= logp_max,
         'hbd_check': properties['hbd'] <= hbd_max,
@@ -251,6 +292,7 @@ if __name__ == "__main__":
         if props:
             print(f"  MW: {props['molecular_weight']:.2f} Da")
             print(f"  LogP: {props['logp']:.2f}")
+            print(f"  LogS: {props['logS']:.2f} (solubility)")
             print(f"  HBD: {props['hbd']}")
             print(f"  HBA: {props['hba']}")
             print(f"  PSA: {props['psa']:.2f} Ų")

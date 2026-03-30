@@ -39,6 +39,7 @@ class TestPropertyCalculator(unittest.TestCase):
         self.assertIsNotNone(props)
         self.assertIn('molecular_weight', props)
         self.assertIn('logp', props)
+        self.assertIn('logS', props)  # Solubility
         self.assertIn('hbd', props)
         self.assertIn('hba', props)
         self.assertIn('psa', props)
@@ -58,6 +59,7 @@ class TestPropertyCalculator(unittest.TestCase):
         self.assertIsInstance(passes, bool)
         self.assertIsInstance(constraints, dict)
         self.assertIsInstance(properties, dict)
+        self.assertIn('solubility_check', constraints)  # NEW: solubility constraint
         self.assertIn('mw_check', constraints)
         self.assertIn('logp_check', constraints)
         self.assertIn('hbd_check', constraints)
@@ -80,6 +82,7 @@ class TestPropertyCalculator(unittest.TestCase):
         """Test that calculated properties are in reasonable ranges."""
         props = calculate_all_properties(self.valid_smiles)
         self.assertGreater(props['molecular_weight'], 0)
+        self.assertIsNotNone(props['logS'])  # Solubility should be calculated
         self.assertGreater(props['qed'], 0)
         self.assertLessEqual(props['qed'], 1)
         self.assertGreaterEqual(props['hbd'], 0)
@@ -89,6 +92,20 @@ class TestPropertyCalculator(unittest.TestCase):
         self.assertGreaterEqual(props['rotatable_bonds'], 0)
         self.assertGreaterEqual(props['sa_score'], 1)
         self.assertLessEqual(props['sa_score'], 10)
+    
+    def test_solubility_calculation(self):
+        """Test ESOL solubility calculation."""
+        # Test with highly soluble molecule (glycine: NCC(=O)O)
+        glycine_smiles = "NCC(=O)O"
+        props = calculate_all_properties(glycine_smiles)
+        self.assertIsNotNone(props['logS'])
+        # Glycine is highly soluble, logS should be positive
+        self.assertGreater(props['logS'], -2)  # Reasonable for small polar molecule
+        
+        # Test with lipophilic molecule (ibuprofen)
+        props_ibupro = calculate_all_properties(self.valid_smiles)
+        # Lipophilic drugs typically have negative logS
+        self.assertLess(props_ibupro['logS'], 0)
 
 
 class TestSpecificMolecules(unittest.TestCase):
