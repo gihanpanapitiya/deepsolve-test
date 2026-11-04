@@ -1,0 +1,147 @@
+name: Render team diagram
+on:
+  push:
+    # The job below filters push events to the default branch while still
+    # allowing repositories whose default branch is not named "main".
+    paths:
+      - team.json
+      - team_plan.md
+      - scripts/render_team_md.py
+      - scripts/sync_team_discussion.py
+      - scripts/sync_issue_assignments.py
+      - .github/workflows/render_team.yaml
+  # Re-sync the Issues column whenever a team member is (un)assigned an issue,
+  # or an issue opens/closes (open-only filter means state changes matter).
+  issues:
+    types: [assigned, unassigned, closed, reopened, deleted, transferred]
+  # A cosolver's work branch appears/disappears outside any push to the default
+  # branch, so refresh the Branch column when refs come and go.
+  create:
+  delete:
+  workflow_dispatch:
+permissions:
+  contents: write
+  discussions: write
+  issues: read
+# Serialize runs on the same branch. The workflow pushes generated files back to
+# the branch (and its own push of team.json re-fires the workflow), so overlapping
+# runs would race and get non-fast-forward "fetch first" push rejections. Queue
+# instead of cancelling so an in-flight run finishes its push cleanly; GitHub keeps
+# at most one pending run per group, so this can't pile up.
+concurrency:
+  group: render-team-${{ github.repository }}-${{ github.event.repository.default_branch }}
+  cancel-in-progress: false
+jobs:
+  render-team:
+    if: ${{ github.event_name != 'push' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    runs-on: ubuntu-latest
+    # Mint a token for a dedicated renderer GitHub App when configured. Store
+    # TEAM_RENDER_APP_ID / TEAM_RENDER_APP_PRIVATE_KEY as ORG-level Actions
+    # secrets so one App serves every repo without copying a key into any repo.
+    # The App is added to the branch ruleset's bypass list (automated by the
+    # ScienceHands daemon at init); the agent account is not, so it still needs
+    # PR approval. Falls back to TEAM_RENDER_PUSH_TOKEN (a machine-user PAT) or
+    # GITHUB_TOKEN (unprotected branch only) when no App is configured.
+    env:
+      HAS_RENDER_APP: ${{ secrets.TEAM_RENDER_APP_ID != '' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          # Don't persist the default GITHUB_TOKEN as a git credential: its
+          # http.extraheader overrides the renderer-App token in our push URLs,
+          # so pushes would otherwise authenticate as github-actions[bot] (which
+          # is NOT on the ruleset bypass) and get rejected.
+          persist-credentials: false
+      - name: Mint renderer token (GitHub App)
+        id: render-token
+        if: ${{ env.HAS_RENDER_APP == 'true' }}
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.TEAM_RENDER_APP_ID }}
+          private-key: ${{ secrets.TEAM_RENDER_APP_PRIVATE_KEY }}
+      - name: Ensure team_plan.md exists
+        # The discussion sync prepends team_plan.md to the body. Guarantee the
+        # file exists (blank is fine) so neither the script nor downstream
+        # readers have to special-case missing input.
+        run: |
+          if [ ! -f team_plan.md ]; then
+            : > team_plan.md
+            echo "Created blank team_plan.md"
+          fi
+      - name: Sync issue assignments and work branches into team.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/sync_issue_assignments.py
+      - name: Render TEAM.md
+        run: python scripts/render_team_md.py team.json TEAM.md "${{ github.repository }}"
+      - name: Commit generated files
+        env:
+          # Prefer the renderer App token (above); fall back to a machine-user PAT,
+          # then GITHUB_TOKEN. Whichever is used must be the dedicated renderer
+          # identity that is on the ruleset bypass list — never the agent account.
+          GH_PUSH_TOKEN: ${{ steps.render-token.outputs.token || secrets.TEAM_RENDER_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # Stage first so a newly-created (untracked) team_plan.md is detected;
+          # plain `git diff --quiet` ignores untracked files.
+          git add team.json TEAM.md team_plan.md
+          if git diff --cached --quiet; then
+            echo "team.json, TEAM.md, team_plan.md are up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update team roster, plan, and issue assignments"
+          # Push with a fetch+rebase retry so a concurrent push to the branch
+          # (a queued run, or a human merge) doesn't fail us with "fetch first".
+          PUSH_URL="https://x-access-token:${GH_PUSH_TOKEN}@github.com/${{ github.repository }}.git"
+          for attempt in 1 2 3; do
+            git push "$PUSH_URL" "HEAD:${{ github.event.repository.default_branch }}" && exit 0
+            echo "push rejected (attempt $attempt); rebasing on latest ${{ github.event.repository.default_branch }}…"
+            git fetch "$PUSH_URL" "${{ github.event.repository.default_branch }}" || true
+            git rebase FETCH_HEAD || { git rebase --abort || true; }
+          done
+          echo "::error::could not push generated files after 3 attempts"; exit 1
+      - name: Sync pinned team discussion
+        env:
+          # Prefer the renderer App token so the pinned discussion is authored by
+          # the bot rather than a human's account. This previously required a user
+          # PAT — the Discussions GraphQL API used to return "Resource not
+          # accessible by integration" for installation tokens — but that is no
+          # longer true: verified 2026-08-28 that an installation token with
+          # `discussions: write` can read discussionCategories and run
+          # createDiscussion / updateDiscussion / addDiscussionComment.
+          # REQUIRES the renderer App to be granted Discussions: Read and write;
+          # without that grant the step fails and you should fall back to a PAT in
+          # DISCUSSION_TOKEN (classic: repo + write:discussion, or fine-grained:
+          # Discussions RW). The default Actions GITHUB_TOKEN is a create-only
+          # last resort — it cannot update an existing discussion.
+          GITHUB_TOKEN: ${{ steps.render-token.outputs.token || secrets.DISCUSSION_TOKEN || secrets.GITHUB_TOKEN }}
+          TEAM_DISCUSSION_CATEGORY: General
+          TEAM_DISCUSSION_TITLE: Team Roster and Discussion
+        run: python scripts/sync_team_discussion.py
+
+      - name: Commit discussion state if changed
+        env:
+          # Same dedicated renderer identity as above (see that step's note).
+          GH_PUSH_TOKEN: ${{ steps.render-token.outputs.token || secrets.TEAM_RENDER_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          git add .github/team-discussion.json
+          # Use --cached so newly-created (untracked) state files are detected too;
+          # a plain `git diff` ignores untracked files and would skip the first commit.
+          if git diff --cached --quiet; then
+            echo "Discussion state unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: record team discussion id"
+          # Same fetch+rebase retry as the generated-files push above.
+          PUSH_URL="https://x-access-token:${GH_PUSH_TOKEN}@github.com/${{ github.repository }}.git"
+          for attempt in 1 2 3; do
+            git push "$PUSH_URL" "HEAD:${{ github.event.repository.default_branch }}" && exit 0
+            echo "push rejected (attempt $attempt); rebasing on latest ${{ github.event.repository.default_branch }}…"
+            git fetch "$PUSH_URL" "${{ github.event.repository.default_branch }}" || true
+            git rebase FETCH_HEAD || { git rebase --abort || true; }
+          done
+          echo "::error::could not push discussion state after 3 attempts"; exit 1

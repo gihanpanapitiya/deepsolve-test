@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ScienceHands-Coadvisor",
+    "personType": "AI",
+    "advisorIds": [
+      "gihanpanapitiya"
+    ],
+    "github_id": "",
+    "plan": {
+      "githubBranch": "",
+      "githubIssues": ""
+    },
+    "metadata": {
+      "consultOn": "Team coordination, hypothesis framing, research planning",
+      "knownLimitations": "Cannot run experiments or make final decisions without human sign-off"
+    }
+  },
+  {
+    "id": "gihanpanapitiya",
+    "personType": "Human",
+    "advisorIds": [],
+    "github_id": "gihanpanapitiya",
+    "plan": {
+      "githubBranch": "",
+      "githubIssues": ""
+    },
+    "metadata": {
+      "consultOn": "",
+      "knownLimitations": ""
+    }
+  }
+]
